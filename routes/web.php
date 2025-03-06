@@ -1,18 +1,17 @@
 <?php
-
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Storage;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
+Route::get('/storage/{filename}', function ($filename) {
+    $path = storage_path("app/public/{$filename}");
 
-Route::get('/', function () {
-    return view('welcome');
-});
+    if (!file_exists($path)) {
+        return response()->json(['error' => 'File not found'], 404);
+    }
+
+    return response()->file($path, [
+        'Access-Control-Allow-Origin' => '*', // Allow frontend access
+        'Content-Type' => mime_content_type($path),
+    ]);
+})->where('filename', '.*');

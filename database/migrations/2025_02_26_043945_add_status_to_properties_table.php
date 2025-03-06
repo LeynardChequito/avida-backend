@@ -9,9 +9,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('properties', function (Blueprint $table) {
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending')->after('images');
+            if (!Schema::hasColumn('properties', 'status')) { // ✅ Check if column exists first
+                $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            }
         });
     }
+    
 
     public function down(): void
     {

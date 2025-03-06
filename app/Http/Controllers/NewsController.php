@@ -13,24 +13,27 @@ class NewsController extends Controller
     // ✅ Require authentication except for fetching news
     public function __construct()
     {
-        $this->middleware('auth:api')->except(['index']);
+        $this->middleware('auth:api')->except(['index', 'show']); // ✅ Allow public access to index & show
     }
-
-    // ✅ Fetch all news
+    
     public function index()
     {
         $news = News::orderBy('created_at', 'desc')->get();
-
-        // Convert image paths to full URLs
+    
         $news->transform(function ($item) {
-            if ($item->image) {
-                $item->image = asset("storage/" . str_replace("public/", "", $item->image));
-            }
+            // ✅ Ensure images are decoded properly
+            $imagePaths = is_array($item->images) ? $item->images : json_decode($item->images, true) ?? [];
+            
+            // ✅ Convert relative paths to full URLs
+            $item->images = array_map(fn($img) => asset("storage/{$img}"), $imagePaths);
+    
             return $item;
         });
-
+    
         return response()->json($news, 200);
     }
+    
+    
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -123,6 +126,29 @@ class NewsController extends Controller
         $news->save();
     
         return response()->json(['message' => 'News updated successfully', 'news' => $news], 200);
+    }
+    public function show($id)
+    {
+        $news = News::find($id);
+    
+        if (!$news) {
+            return response()->json(['error' => 'News not found'], 404);
+        }
+    
+        // Decode image paths and convert them to full URLs
+        $imagePaths = json_decode($news->images, true) ?? [];
+        $fullImageUrls = array_map(fn($image) => asset("storage/" . $image), $imagePaths);
+    
+        return response()->json([
+            'id' => $news->id,
+            'title' => $news->title,
+            'category' => $news->category,
+            'content' => $news->content,
+            'status' => $news->status,
+            'images' => $fullImageUrls, // ✅ Now returns full URLs
+            'created_at' => $news->created_at,
+            'updated_at' => $news->updated_at
+        ], 200);
     }
     
     // ✅ Delete news
