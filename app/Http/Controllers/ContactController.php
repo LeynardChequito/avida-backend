@@ -35,30 +35,25 @@ class ContactController extends Controller {
     }
     
     
-
-        // ✅ Update contact details (Admin)
-        public function update(Request $request, $id) {
-            $contact = Contact::findOrFail($id);
-            $request->validate([
-                'name' => 'required|string',
-                'address' => 'required|string',
-                'main_phone' => 'nullable|string',
-                'sales_phone' => 'nullable|string',
-                'leasing_phone' => 'nullable|string',
-                'employment_phone' => 'nullable|string',
-                'customer_care_phone' => 'nullable|string',
-                'customer_care_landline' => 'nullable|string',
-                'email' => 'required|email',
-                'support_email' => 'nullable|email',
-                'business_hours' => 'nullable|string',
-                'facebook_link' => 'nullable|url',
-                'instagram_link' => 'nullable|url',
-                'youtube_link' => 'nullable|url',
-                'linkedin_link' => 'nullable|url',
-                'tiktok_link' => 'nullable|url',
-            ]);
+    public function update(Request $request, $id) {
+        $contact = Contact::findOrFail($id);
     
-            $contact->update($request->all());
-            return response()->json(['message' => 'Contact updated successfully']);
-        }
+        $request->validate([
+            'name' => 'required|string',
+            'address' => 'required|string',
+            'email' => 'required|email',
+        ]);
+    
+        // Merge with existing data to avoid missing fields
+        $updatedData = array_merge($contact->toArray(), $request->all());
+    
+        $contact->update($updatedData);
+        return response()->json(['message' => 'Contact updated successfully']);
+    }
+    public function destroy($id) {
+        $contact = Contact::findOrFail($id); // Find the contact or return 404
+        $contact->delete(); // Delete the contact
+        return response()->json(['message' => 'Contact deleted successfully'], 200);
+    }
+    
 }

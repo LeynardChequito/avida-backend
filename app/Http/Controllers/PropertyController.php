@@ -130,26 +130,26 @@ class PropertyController extends Controller
      * ✅ Get Single Property with Media
      */
     public function getProperty($id, Request $request)
-{
-    $status = $request->query('status', 'approved');
-    $property = Property::where('id', $id)
-        ->where('status', $status)
-        ->with('media')
-        ->first();
-
-    if (!$property) {
-        return response()->json(['error' => 'Property not found or not approved'], 404);
-    }
-
-    // ✅ Convert relative paths to full URLs
-    foreach ($property->media as $media) {
-        if (!str_starts_with($media->url, 'http')) {
-            $media->url = asset('storage/' . $media->url); // Convert to full URL
+    {
+        $status = $request->query('status', 'approved');
+        $property = Property::where('id', $id)
+            ->where('status', $status)
+            ->with('media')
+            ->first();
+    
+        if (!$property) {
+            return response()->json(['error' => 'Property not found or not approved'], 404);
         }
+    
+        // ✅ Convert relative paths to full URLs
+        foreach ($property->media as $media) {
+            if (!str_starts_with($media->url, 'http')) {
+                $media->url = asset('storage/' . ltrim($media->url, '/'));
+            }
+        }
+    
+        return response()->json($property);
     }
-
-    return response()->json($property);
-}
     
     // ✅ 5. Get All Published Properties (Approved Only)
     public function getPublishedProperties()
@@ -159,6 +159,15 @@ class PropertyController extends Controller
                 ->with('media')
                 ->orderBy('created_at', 'desc')
                 ->get();
+    
+            // ✅ Convert storage paths to full URLs
+            foreach ($properties as $property) {
+                foreach ($property->media as $media) {
+                    if (!str_starts_with($media->url, 'http')) {
+                        $media->url = asset('storage/' . ltrim($media->url, '/'));
+                    }
+                }
+            }
     
             return response()->json($properties, 200);
         } catch (\Exception $e) {
@@ -170,6 +179,15 @@ class PropertyController extends Controller
     {
         try {
             $properties = Property::with('media')->orderBy('created_at', 'desc')->get();
+    
+            // ✅ Convert relative paths to full URLs
+            $properties->each(function ($property) {
+                foreach ($property->media as $media) {
+                    if (!str_starts_with($media->url, 'http')) {
+                        $media->url = asset('storage/' . $media->url);
+                    }
+                }
+            });
     
             return response()->json($properties, 200);
         } catch (\Exception $e) {

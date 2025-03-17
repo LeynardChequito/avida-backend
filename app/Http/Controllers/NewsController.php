@@ -21,18 +21,22 @@ class NewsController extends Controller
         $news = News::orderBy('created_at', 'desc')->get();
     
         $news->transform(function ($item) {
-            // ✅ Ensure images are decoded properly
-            $imagePaths = is_array($item->images) ? $item->images : json_decode($item->images, true) ?? [];
+            // ✅ Ensure `images` is always an array
+            $imagePaths = is_string($item->images) ? json_decode($item->images, true) : $item->images;
+            if (!is_array($imagePaths)) {
+                $imagePaths = [];
+            }
+    
+            // ✅ Dynamically determine storage path based on category
+            $categoryFolder = strtolower($item->category); // Example: 'news', 'blog', 'announcement'
             
-            // ✅ Convert relative paths to full URLs
-            $item->images = array_map(fn($img) => asset("storage/{$img}"), $imagePaths);
+            $item->images = array_map(fn($img) => asset("storage/{$categoryFolder}/" . basename($img)), $imagePaths);
     
             return $item;
         });
     
         return response()->json($news, 200);
     }
-    
     
     public function store(Request $request)
     {
