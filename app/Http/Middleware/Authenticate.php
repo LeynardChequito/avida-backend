@@ -17,4 +17,10 @@ class Authenticate extends Middleware
             abort(401, 'Unauthorized');
         }
     }
+    public function handle($request, Closure $next)
+{
+    \Log::info("🔐 JWT middleware triggered", ['token' => $request->bearerToken()]);
+    return parent::handle($request, $next);
+}
+
 }

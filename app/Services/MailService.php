@@ -46,4 +46,17 @@ class MailService
             return false;
         }
     }
+
+    public static function sendVerificationEmail($to, $name, $verifyLink)
+    {
+        $subject = "Verify Your Email Address";
+        $body = "
+            <h2>Hello, $name!</h2>
+            <p>Thank you for registering. Please click the button below to verify your email:</p>
+            <p><a href='$verifyLink' style='padding:10px 20px;background:#990e15;color:white;text-decoration:none;border-radius:5px;'>Verify Email</a></p>
+            <p>If you did not sign up, please ignore this message.</p>
+        ";
+
+        return self::sendEmail($to, $subject, $body);
+    }
 }

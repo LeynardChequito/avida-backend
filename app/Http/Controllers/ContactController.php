@@ -6,7 +6,29 @@ use App\Models\Contact;
 use Illuminate\Http\Request;
 
 class ContactController extends Controller {
-    public function index() {
+    public function publicIndex()
+    {
+        return response()->json(
+            Contact::select(
+                'address',
+                'main_phone',
+                'sales_phone',
+                'leasing_phone',
+                'employment_phone',
+                'customer_care_phone',
+                'email',
+                'facebook_link',
+                'instagram_link',
+                'youtube_link',
+                'linkedin_link',
+                'tiktok_link'
+            )->get()
+        );
+    }
+
+    // ✅ Admin: Full access
+    public function adminIndex()
+    {
         return response()->json(Contact::all());
     }
 

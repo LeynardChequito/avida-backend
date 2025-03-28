@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\NewsController;
@@ -14,101 +13,116 @@ use App\Http\Controllers\JobController;
 use App\Http\Controllers\JobApplicationController;
 use App\Http\Controllers\AboutUsController;
 use App\Http\Controllers\AdminDashboardController;
-use App\Models\Traffic;
 
+// 🔐 Public Auth Routes
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/register', [AuthController::class, 'register']);
+Route::get('/verify-email', [AuthController::class, 'verifyEmail']); // custom token
+// Route::get('/verify-email/{id}/{hash}', [VerificationController::class, '__invoke'])->name('verification.verify'); // default Laravel
 
-// Public Routes
+
+// 🔐 Admin-Only Registration (after login as admin)
+Route::middleware(['jwt.auth', 'isAdmin'])->post('/register', [AuthController::class, 'register']);
+
+// 🌐 Public Routes
 Route::get('/news', [NewsController::class, 'index']);
-Route::get('/news/{id}', [NewsController::class, 'show']); // ✅ Fetch single news
+Route::get('/news/{id}', [NewsController::class, 'show']);
 
 Route::get('/layouts', [RoomPlannerController::class, 'getLayouts']);
 Route::post('/layouts/save', [RoomPlannerController::class, 'saveLayout']);
 
 Route::post('/submit-property', [PropertyController::class, 'submitProperty']);
-Route::get('/admin/properties', [PropertyController::class, 'getAllProperties']);
-Route::patch('/admin/property/{id}', [PropertyController::class, 'updateApprovalStatus']);
 Route::get('/properties/{id}', [PropertyController::class, 'getProperty']);
 Route::get('/properties', [PropertyController::class, 'getPublishedProperties']);
-Route::delete('/admin/property/{id}', [PropertyController::class, 'deleteProperty']);
 
-Route::get('/contacts', [ContactController::class, 'index']);
-Route::post('/contacts', [ContactController::class, 'store']);
-Route::put('/contacts/{id}', [ContactController::class, 'update']); // Update contacts (Admin)
-Route::delete('/contacts/{id}', [ContactController::class, 'destroy']);
 
-Route::get('/admin/inquiries', [InquiryController::class, 'index']); // Get all inquiries
-Route::get('/admin/inquiries/{id}', [InquiryController::class, 'show']); // Get inquiry details
-Route::patch('/admin/inquiries/{id}/status', [InquiryController::class, 'updateStatus']); // Update status
-Route::delete('/admin/inquiries/{id}', [InquiryController::class, 'destroy']); // Delete inquiry
-Route::get('/inquiries/{id}/with-replies', [InquiryController::class, 'showWithReplies']); // Fetch inquiry + replies
-Route::post('/inquiries', [InquiryController::class, 'store']); // Submit inquiry (User)
-Route::post('/inquiries/{id}/reply', [InquiryController::class, 'reply']); // Admin replies to user
+
+Route::post('/inquiries', [InquiryController::class, 'store']);
+Route::get('/inquiries/{id}/with-replies', [InquiryController::class, 'showWithReplies']);
 
 Route::post('/appointments', [AppointmentController::class, 'store']);
 Route::get('/appointments', [AppointmentController::class, 'index']);
 
-
-Route::prefix('admin')->group(function () {
-    Route::apiResource('/services', ServiceController::class);
-    Route::get('/services', [ServiceController::class, 'index']);
-    Route::post('/services', [ServiceController::class, 'store']);
-    Route::put('/services/{id}', [ServiceController::class, 'update']);
-    Route::delete('/services/{id}', [ServiceController::class, 'destroy']);
-    Route::patch('/services/{id}/status', [ServiceController::class, 'updateStatus']);
-    Route::get('/services/{id}', [ServiceController::class, 'show']);
-
-});
-
-Route::prefix('jobs')->group(function () {
-    Route::get('/', [JobController::class, 'index']); // ✅ All jobs (Admin)
-    Route::get('/published', [JobController::class, 'getPublishedJobs']); // ✅ Only published jobs (User)
-    Route::post('/', [JobController::class, 'store']); // ✅ Create a new job
-    Route::get('/{id}', [JobController::class, 'show']); // ✅ Get a single job
-    Route::match(['PUT', 'POST'], '/{id}', [JobController::class, 'update']); // ✅ Allow both PUT & POST for updates
-    Route::delete('/{id}', [JobController::class, 'destroy']); // ✅ Delete job
-});
-
-Route::post('/job-applications', [JobApplicationController::class, 'store']);
-// Route::get('/job-applications', [JobApplicationController::class, 'index']);
-Route::get('/admin/job-applications', [JobApplicationController::class, 'index']); // Get all applications
-Route::get('/admin/job-applications/{id}', [JobApplicationController::class, 'show']); // Get single application
-Route::patch('/admin/job-applications/{id}/status', [JobApplicationController::class, 'updateStatus']); // Update status
-Route::delete('/admin/job-applications/{id}', [JobApplicationController::class, 'destroy']); // Delete application
-Route::post('/admin/job-applications/{id}/reply', [JobApplicationController::class, 'sendReply']);
-
-
 Route::get('/about-us', [AboutUsController::class, 'show']);
-Route::get('/admin/about-us', [AboutUsController::class, 'getAdminData']);
+
+Route::get('/jobs/published', [JobController::class, 'getPublishedJobs']);
+Route::post('/job-applications', [JobApplicationController::class, 'store']);
+
+Route::get('/services', [ServiceController::class, 'index']); // 🌐 Public: Get only approved services
+Route::get('/services/{id}', [ServiceController::class, 'show']); // 🌐 Public: Show approved service only
+
+Route::get('/contacts', [ContactController::class, 'publicIndex']);
 
 
-
-
-Route::get('/admin/dashboard/stats', [AdminDashboardController::class, 'getDashboardStats']);
-Route::get('/admin/dashboard/property-trends', [AdminDashboardController::class, 'getPropertyTrends']);
-Route::get('/admin/dashboard/inquiry-trends', [AdminDashboardController::class, 'getInquiryTrends']);
-Route::get('/admin/dashboard/job-application-trends', [AdminDashboardController::class, 'getJobApplicationTrends']);
-Route::get('/admin/dashboard/traffic', [AdminDashboardController::class, 'getWebsiteTraffic']);
-
-
-
-// Authenticated Routes (Require JWT)
-Route::middleware(['jwt.auth'])->group(function () {
-    Route::post('/news', [NewsController::class, 'store']);
-    Route::put('/news/{id}', [NewsController::class, 'update']); // ✅ Ensure PUT is explicitly declared
-    Route::delete('/news/{id}', [NewsController::class, 'destroy']);
-
-    // User routes
+    // 🔐 Authenticated Routes (Any verified user with token)
+Route::middleware(['jwt.auth', 'isAdmin'])->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/user/update-profile', [AuthController::class, 'updateProfile']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    Route::patch('/appointments/{id}/status', [AppointmentController::class, 'updateStatus']);
-    Route::post('/appointments/{id}/message', [AppointmentController::class, 'sendMessage']);
+    Route::post('/news', [NewsController::class, 'store']);
+    Route::put('/news/{id}', [NewsController::class, 'update']);
+    Route::delete('/news/{id}', [NewsController::class, 'destroy']);
 
-    Route::match(['PUT', 'POST'], '/admin/about-us/update', [AboutUsController::class, 'update']);
-    Route::put('/admin/about-us/update-status', [AboutUsController::class, 'updateStatus']);
-    Route::post('/admin/about-us/revert/{version}', [AboutUsController::class, 'revertVersion']);
+
 });
 
+// 🔐 Admin-Only Routes (Protected with adminOnly middleware)
+Route::middleware(['jwt.auth', 'isAdmin'])->prefix('admin')->group(function () {
+    // 🏠 Property Management
+    Route::get('/properties', [PropertyController::class, 'getAllProperties']);
+    Route::patch('/property/{id}', [PropertyController::class, 'updateApprovalStatus']);
+    Route::delete('/property/{id}', [PropertyController::class, 'deleteProperty']);
+
+    // 💼 Services CRUD
+    Route::get('/services', [ServiceController::class, 'getAll']); // 🔐 Admin: Get all services (0 & 1)
+    Route::post('/services', [ServiceController::class, 'store']); // 🔐 Admin: Add new service
+    Route::put('/services/{id}', [ServiceController::class, 'update']); // 🔐 Admin: Update service
+    Route::delete('/services/{id}', [ServiceController::class, 'destroy']); // 🔐 Admin: Delete service
+    
+Route::get('/contacts', [ContactController::class, 'adminIndex']); // inside Route::prefix('admin')
+Route::post('/contacts', [ContactController::class, 'store']);
+Route::put('/contacts/{id}', [ContactController::class, 'update']);
+Route::delete('/contacts/{id}', [ContactController::class, 'destroy']);
+
+    Route::patch('/appointments/{id}/status', [AppointmentController::class, 'updateStatus']);
+    Route::post('/appointments/{id}/message', [AppointmentController::class, 'sendMessage']);
+    
+    
+    // 📬 Inquiries
+    Route::get('/inquiries', [InquiryController::class, 'index']);
+    Route::get('/inquiries/{id}', [InquiryController::class, 'show']);
+    Route::patch('/inquiries/{id}/status', [InquiryController::class, 'updateStatus']);
+    Route::delete('/inquiries/{id}', [InquiryController::class, 'destroy']);
+    Route::post('/inquiries/{id}/reply', [InquiryController::class, 'reply']);
+
+    // 👔 Job Applications
+    Route::get('/job-applications', [JobApplicationController::class, 'index']);
+    Route::get('/job-applications/{id}', [JobApplicationController::class, 'show']);
+    Route::patch('/job-applications/{id}/status', [JobApplicationController::class, 'updateStatus']);
+    Route::delete('/job-applications/{id}', [JobApplicationController::class, 'destroy']);
+    Route::post('/job-applications/{id}/reply', [JobApplicationController::class, 'sendReply']);
+
+
+    // 📊 Dashboard
+    Route::get('/dashboard/stats', [AdminDashboardController::class, 'getDashboardStats']);
+    Route::get('/dashboard/property-trends', [AdminDashboardController::class, 'getPropertyTrends']);
+    Route::get('/dashboard/inquiry-trends', [AdminDashboardController::class, 'getInquiryTrends']);
+    Route::get('/dashboard/job-application-trends', [AdminDashboardController::class, 'getJobApplicationTrends']);
+    Route::get('/dashboard/traffic', [AdminDashboardController::class, 'getWebsiteTraffic']);
+
+    // 📄 About Us Content Management
+    Route::get('/about-us', [AboutUsController::class, 'getAdminData']);
+    Route::match(['PUT', 'POST'], '/about-us/update', [AboutUsController::class, 'update']);
+    Route::put('/about-us/update-status', [AboutUsController::class, 'updateStatus']);
+    Route::post('/about-us/revert/{version}', [AboutUsController::class, 'revertVersion']);
+});
+
+
+// 🔐 Admin Job CRUD (Moved outside and protected separately)
+Route::middleware(['jwt.auth', 'isAdmin'])->prefix('jobs')->group(function () {
+    Route::get('/', [JobController::class, 'index']);
+    Route::post('/', [JobController::class, 'store']);
+    Route::get('/{id}', [JobController::class, 'show']);
+    Route::match(['PUT', 'POST'], '/{id}', [JobController::class, 'update']);
+    Route::delete('/{id}', [JobController::class, 'destroy']);
+});

@@ -12,7 +12,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('about_us', function (Blueprint $table) {
-            $table->string('company_logo')->nullable(); // Image Upload
+            // $table->string('company_logo')->nullable(); // Image Upload
             $table->json('office_images')->nullable();  // Multiple Images
             $table->json('version_history')->nullable(); // Store old content
         });

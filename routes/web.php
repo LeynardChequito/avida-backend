@@ -15,3 +15,4 @@ Route::get('/storage/{filename}', function ($filename) {
         'Content-Type' => mime_content_type($path),
     ]);
 })->where('filename', '.*');
+

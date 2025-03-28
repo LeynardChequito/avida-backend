@@ -16,6 +16,8 @@ class AboutUs extends Model
         'customer_segments', 'quality_innovation', 'prime_locations',
         'affordability_financing', 'sustainability', 'awards',
         'contact_address', 'phone_numbers', 'email_support', 'live_chat',
-        'social_media_links', 'status', 'company_logo', 'office_images', 'version_history'
+        'social_media_links', 'status', 
+        // 'company_logo',
+         'office_images', 'version_history'
     ];
 }

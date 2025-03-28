@@ -56,7 +56,7 @@ class AboutUsController extends Controller
             'live_chat' => 'nullable|string',
             'social_media_links' => 'nullable|json',
             'status' => 'nullable|string|in:Published,Unpublished',
-            'company_logo' => 'nullable|image|mimes:jpg,png,jpeg,svg|max:2048',
+            // 'company_logo' => 'nullable|image|mimes:jpg,png,jpeg,svg|max:2048',
             'office_images.*' => 'nullable|image|mimes:jpg,png,jpeg|max:2048'
         ]);
 
@@ -70,10 +70,10 @@ class AboutUsController extends Controller
 
         try {
             // ✅ Handle Company Logo Upload
-            if ($request->hasFile('company_logo')) {
-                $path = $request->file('company_logo')->store('uploads/about', 'public');
-                $about->company_logo = $path;
-            }
+            // if ($request->hasFile('company_logo')) {
+            //     $path = $request->file('company_logo')->store('uploads/about', 'public');
+            //     $about->company_logo = $path;
+            // }
 
             // ✅ Handle Multiple Office Images
             if ($request->hasFile('office_images')) {
@@ -97,7 +97,8 @@ class AboutUsController extends Controller
                 'company_name', 'established_year', 'parent_company', 'company_slogan',
                 'brief_intro', 'mission_statement', 'vision_statement', 'our_story',
                 'evolution', 'quality_innovation', 'prime_locations', 'affordability_financing',
-                'company_logo', 'office_images', 'milestone', 'real_estate_services', 'property_types',
+                // 'company_logo',
+                 'office_images', 'milestone', 'real_estate_services', 'property_types',
                 'sustainability', 'awards', 'contact_address','phone_numbers', 'email_support',
                 'investment_opportunities','customer_segments', 'live_chat', 'social_media_links', 'status',
                 'version_history'

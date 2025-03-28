@@ -39,46 +39,47 @@ class NewsController extends Controller
     }
     
     public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255',
-            'category' => 'required|string',
-            'content' => 'required|string',
-            'status' => 'required|in:draft,published,unpublished',
-            'images' => 'nullable|array', // ✅ Allow multiple images
-            'images.*' => 'image|mimes:jpg,jpeg,png|max:2048', // ✅ Validate each image
-        ]);
+{
+    $validator = Validator::make($request->all(), [
+        'title' => 'required|string|max:255',
+        'category' => 'required|string',
+        'content' => 'required|string',
+        'status' => 'required|in:draft,published,unpublished',
+        'images' => 'nullable|array',
+        'images.*' => 'required|file|image|mimes:jpg,jpeg,png|max:5120',
+    ]);
     
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-    
-        // ✅ Ensure category folder exists
-        $categoryFolder = 'public/' . strtolower($request->category);
-        if (!Storage::exists($categoryFolder)) {
-            Storage::makeDirectory($categoryFolder);
-        }
-    
-        // ✅ Handle Multiple Image Uploads
-        $imagePaths = [];
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $imageName = time() . '_' . $image->getClientOriginalName();
-                $imagePath = $image->storeAs($categoryFolder, $imageName);
-                $imagePaths[] = str_replace("public/", "", $imagePath); // ✅ Store relative path
-            }
-        }
-    
-        $news = News::create([
-            'title' => $request->title,
-            'category' => $request->category,
-            'content' => $request->content,
-            'status' => $request->status,
-            'images' => json_encode($imagePaths), // ✅ Store as JSON
-        ]);
-    
-        return response()->json(['message' => 'News created successfully', 'news' => $news], 201);
+    if ($validator->fails()) {
+        \Log::error('Validation failed:', $validator->errors()->toArray());
+        return response()->json(['errors' => $validator->errors()], 422);
     }
+    
+    $categoryFolder = 'public/' . strtolower($request->category);
+    if (!Storage::exists($categoryFolder)) {
+        Storage::makeDirectory($categoryFolder);
+    }
+
+    $imagePaths = [];
+
+    if ($request->hasFile('images')) {
+        foreach ($request->file('images') as $image) {
+            $imageName = time() . '_' . $image->getClientOriginalName();
+            $path = $image->storeAs($categoryFolder, $imageName);
+            $imagePaths[] = str_replace('public/', '', $path); // store relative path
+        }
+    }
+
+    $news = News::create([
+        'title' => $request->title,
+        'category' => $request->category,
+        'content' => $request->content,
+        'status' => $request->status,
+        'images' => json_encode($imagePaths), // store as JSON
+    ]);
+
+    return response()->json(['message' => 'News created', 'news' => $news], 201);
+}
+
     public function update(Request $request, $id)
     {
         $news = News::find($id);
@@ -87,13 +88,14 @@ class NewsController extends Controller
         }
     
         $validator = Validator::make($request->all(), [
-            'title' => 'sometimes|required|string|max:255',
-            'category' => 'sometimes|required|string',
-            'content' => 'sometimes|required|string',
-            'status' => 'sometimes|required|in:draft,published,unpublished',
-            'images' => 'nullable|array', // ✅ Allow multiple images
-            'images.*' => 'image|mimes:jpg,jpeg,png|max:2048', // ✅ Validate each image
+            'title' => 'required|string|max:255',
+            'category' => 'required|string',
+            'content' => 'required|string',
+            'status' => 'required|in:draft,published,unpublished',
+            'images' => 'nullable|array',
+            'images.*' => 'required|file|image|mimes:jpg,jpeg,png|max:5120', // ⬅️ increase size to 5MB
         ]);
+        
     
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);

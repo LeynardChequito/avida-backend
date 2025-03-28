@@ -23,6 +23,8 @@ class Kernel extends HttpKernel
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
         \App\Http\Middleware\CorsMiddleware::class,
         \App\Http\Middleware\TrackVisitor::class,
+        \App\Http\Middleware\Cors::class,
+        \Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode::class,
     ];
 
     /**
@@ -42,8 +44,10 @@ class Kernel extends HttpKernel
 
         'api' => [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class, // ✅ Required for stateful API requests
-        'throttle:api',
-            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
+            \Fruitcake\Cors\HandleCors::class, // Ensure CORS applies to API routes
+            // 'auth:api', // JWT authentication
+            // 'throttle:api',
+            \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
     ];
@@ -55,7 +59,9 @@ class Kernel extends HttpKernel
      *
      * @var array<string, class-string|string>
      */
-    protected $middlewareAliases = [
+    protected $middlewareAliases = [        
+        'isAdmin' => \App\Http\Middleware\IsAdmin::class,
+
         'auth' => \App\Http\Middleware\Authenticate::class,
         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
         'auth.session' => \Illuminate\Session\Middleware\AuthenticateSession::class,
@@ -68,8 +74,9 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'jwt' => \Tymon\JWTAuth\Http\Middleware\Authenticate::class,
-'jwt.auth' => \Tymon\JWTAuth\Http\Middleware\Authenticate::class,
-'jwt.refresh' => \Tymon\JWTAuth\Http\Middleware\RefreshToken::class,
+        'jwt.auth' => \Tymon\JWTAuth\Http\Middleware\Authenticate::class,
+        'jwt.refresh' => \Tymon\JWTAuth\Http\Middleware\RefreshToken::class,
+'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
 
     ];
 }

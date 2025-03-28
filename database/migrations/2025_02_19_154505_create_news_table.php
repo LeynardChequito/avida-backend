@@ -13,7 +13,7 @@ return new class extends Migration {
             $table->string('category');
             $table->text('content');
             $table->enum('status', ['draft', 'published'])->default('draft');
-            $table->json('images')->nullable(); // ✅ Stores multiple image paths as JSON
+            $table->longText('images')->nullable(); // stores JSON string
             $table->timestamps();
         });
     }

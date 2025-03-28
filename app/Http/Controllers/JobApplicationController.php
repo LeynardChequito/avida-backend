@@ -37,26 +37,33 @@ class JobApplicationController extends Controller
         }
 
         if ($request->hasFile('resume')) {
-            $resumePath = $request->file('resume')->store('resumes', 'public');
+            $resumeFile = $request->file('resume');
+            $fileName = time() . '_' . $resumeFile->getClientOriginalName(); // Unique filename
+            $resumePath = $resumeFile->storeAs('resumes', $fileName, 'public'); // Store in `storage/app/public/resumes`
+            
+            // Generate public URL for frontend
+            $publicResumePath = asset('storage/resumes/' . $fileName);
         } else {
             return response()->json(['message' => 'Resume file is required'], 422);
         }
-
+        
+        // Save the application with the correct resume path
         $application = JobApplication::create([
             'job_id' => $request->job_id,
             'full_name' => $request->full_name,
             'email' => $request->email,
             'phone_number' => $request->phone_number,
             'cover_letter' => $request->cover_letter,
-            'resume' => $resumePath,
+            'resume' => $publicResumePath, // ✅ Save public URL for frontend
             'linkedin_url' => $request->linkedin_url,
-            'status' => 'Pending' // Default status
+            'status' => 'Pending'
         ]);
-
+        
         return response()->json([
             'message' => 'Application submitted successfully!',
             'application' => $application
         ], 201);
+        
     }
 
     /**
